@@ -6,7 +6,7 @@
 
 ## 在线使用
 
-**[影之刃零 · 本地存档解析](https://yanghfeng.github.io/ying-zhi-ren-ling/)**
+**[影之刃零 · 本地存档解析](https://zqf1120qr.github.io/pbz-inspector/)**
 
 没有存档也可以点「看示例」，用内置的示例存档跑通整个流程。
 
