@@ -1,0 +1,19 @@
+.idea
+
+# 开发用的真实存档，不要提交/发布（含个人游戏进度）
+PBZSaveGame.sav
+*.sav
+!samples/demo-pbzs.sav
+
+# 本地启动脚本
+start-server.bat
+启动.txt
+
+# 临时与依赖
+.tooling/
+node_modules/
+_zoom.png
+.save-dump.json
+
+# 自检脚本输出
+shots/
