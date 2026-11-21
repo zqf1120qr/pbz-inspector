@@ -76,7 +76,9 @@ function readOverview(page) {
       slotNote: t('#slotNote'),
       weaponNote: t('#weaponNote'),
       accessoryNote: t('#accessoryNote'),
-      medicineNote: t('#medicineNote')
+      medicineNote: t('#medicineNote'),
+      repoLink: document.querySelector('.github-btn') && document.querySelector('.github-btn').getAttribute('href'),
+      starLink: document.querySelector('.star-link') && document.querySelector('.star-link').getAttribute('href')
     };
   });
 }

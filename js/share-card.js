@@ -278,6 +278,38 @@
     ctx.font = '600 19px ' + SANS;
     withSpacing(ctx, 'PHANTOM BLADE ZERO / BATTLE RECORD', PAD, 64, 5);
 
+    /* 右上角：线上地址。放在页眉而不是页脚——战绩图会被转发，
+       底部那行细字八成没人看到。朱砂斜线正好从这块穿过去，
+       所以给一层压暗的底板，顺带把网址衬得更醒目。
+       换域名时 index.html 的两处链接要一起改。 */
+    var siteUrl = 'zqf1120qr.github.io/pbz-inspector';
+    ctx.font = '400 26px ' + MONO;
+    var siteUrlW = ctx.measureText(siteUrl).width;
+    ctx.font = '400 17px ' + SANS;
+    var siteLabelW = ctx.measureText('在线解析').width;
+
+    var siteW = Math.max(siteUrlW, siteLabelW) + 36;
+    var siteX = W - PAD - siteW;
+    var siteY = 34;
+    var siteH = 72;
+
+    ctx.save();
+    roundRect(ctx, siteX, siteY, siteW, siteH, 3);
+    ctx.fillStyle = 'rgba(8,8,10,0.82)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(211,176,120,0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = C.faint;
+    ctx.font = '400 17px ' + SANS;
+    ctx.fillText('在线解析', siteX + 18, siteY + 26);
+
+    ctx.fillStyle = '#d0c8bd';
+    ctx.font = '400 26px ' + MONO;
+    ctx.fillText(siteUrl, siteX + 18, siteY + 60);
+
     ctx.fillStyle = C.text;
     ctx.font = '600 104px ' + SERIF;
     withSpacing(ctx, '影之刃零', PAD, 190, 12);
@@ -489,6 +521,7 @@
     ctx.fillStyle = '#4a4744';
     ctx.font = '400 15px ' + MONO;
     ctx.fillText('parsed locally in browser', PAD, FOOT_Y + 68);
+
     ctx.textAlign = 'right';
     ctx.fillStyle = C.faint;
     ctx.font = '400 17px ' + SANS;

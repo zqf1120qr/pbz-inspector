@@ -16,13 +16,12 @@
 
 本目录是它的本地改造版，在原版基础上增加了：首领按区域分类、首领详情抽屉（简介 / 战绩 / 分组记录）、击败难度标注、本地缓存、320–1920 全档响应式，以及重做的战绩长图。部署方式见「部署到 GitHub Pages」。
 
-
-
 ## 功能
 
 - **时长与进度** — 总游玩时长、当前天数 / 66 天、首领击破率环形图
 - **首领战死图鉴** — 每名交战过的首领一张卡片，带立绘、中文名、击败难度与死亡次数；顶部按所属区域分类筛选
 - **首领详情** — 点击卡片展开抽屉：图鉴简介、死亡 / 挑战 / 击杀 / 最快用时 / 击杀率，以及按「周目_难度」分组的战斗记录
+- **顶栏入口** — 右上角金色「点个 Star」按钮直达 GitHub 仓库；页脚也有一枚求 Star 的胶囊
 - **收集与装备** — 敌人图鉴、成就；武器库（主武器 + 影之武装，含强化等级）、饰品库、药瓶库，图标 + 官方中文名逐条与游民星空图鉴对齐，并给出「已获得 / 图鉴总数」
 - **存档槽切换** — 一份文件里打包的自动档、手动档与账户数据可逐个查看
 - **战绩长图** — Canvas 绘制 1600px 宽的分享图，含四格战绩与首领立绘网格，一键下载
@@ -127,6 +126,7 @@ uint16 nameLen | name | uint8 algorithm | uint8 flag
 - 导出文件名取自存档时间（`PBZGameSystem.DateTimeString`），如 `2026.11.15-02.02.53` 的存档导出为 `261115_战绩.png`；账户槽没有存档时间时退回 `战绩.png`
 - 每张卡片上的难度、周目、死亡数都是深色胶囊标签，难度按档位配色（入阵者冷灰 / 破局者旧金 / 逆天者朱砂）
 - 多段遭遇的首领（见上文）在格子左下角多一枚金色「N 段合并」小标签，与页面卡片一致，提醒该格的挑战次数与最佳用时是几段遭遇的累计值
+- 页眉**右上角**有一个压暗底板的小牌子：`在线解析` + `zqf1120qr.github.io/pbz-inspector`（26px 等宽字），缩到 560px 宽仍读得出来。一开始放在页脚左下角，实测太容易被忽略；底板同时也是为了压住从那个角穿过的朱砂斜线
 - 页脚右侧有一行收藏汇总：`图鉴  武器 12/25 · 影之武装 9/24 · 饰品 25/66 · 药瓶 7/17`。**只上数字不上图标** —— 24 个首领的卡已经 3200px 高、3.6 MB，再塞 132 个图标会到 5000px 以上，微信压完基本看不清，而且装备是存档状态、不是战绩
 - `draw()` 是异步的（需预载立绘），调用方必须 `await`
 - 噪点用 `mulberry32` 按存档数据播种，同一份存档导出的 PNG **逐字节一致**；实测 390@3x / 360@2x / 768@2x / 1600@1x 四种设备配置 MD5 相同
@@ -148,7 +148,7 @@ python -m http.server 8765
 
 ## 部署到 GitHub Pages
 
-纯静态站点，没有后端，可直接托管在 GitHub Pages（上游原版即托管于此）。注意三点：
+纯静态站点，没有后端，可直接托管在 GitHub Pages。线上地址：**[zqf1120qr.github.io/pbz-inspector](https://zqf1120qr.github.io/pbz-inspector/)**。注意三点：
 
 1. **必须是 HTTPS 或 localhost** — `crypto.subtle` 只在安全上下文可用，GitHub Pages 自带 HTTPS
 2. **仓库根目录就是站点根目录** — 本目录下的 `index.html` 要位于仓库根（或改成 `docs/` 后在设置里选 `/docs`）。页面全部使用相对路径，部署在 `https://<user>.github.io/<repo>/` 这样的子路径下也能正常工作
@@ -157,11 +157,13 @@ python -m http.server 8765
 ```bash
 cd page_source
 git init && git add -A && git commit -m "影之刃零存档解析"
-git remote add origin https://github.com/<user>/<repo>.git
+git remote add origin https://github.com/zqf1120qr/pbz-inspector.git
 git push -u origin main
 ```
 
 推送后在仓库 Settings → Pages 里把 Source 设为 `Deploy from a branch` → `main` / `(root)`。`.nojekyll` 已在仓库内，避免 Jekyll 处理静态资源。
+
+站点地址出现在三处，换域名时一起改：顶栏金色 `点个 Star` 按钮的 `href`、页脚求 Star 链接的 `href`（都在 `index.html`）、战绩卡右上角牌子里的地址文案（`js/share-card.js` 的 `siteUrl`）。
 
 体积参考：全站约 7 MB（立绘 2.6 MB、示例图 2.9 MB、装备图标 0.97 MB、代码 0.5 MB），远低于 Pages 的 1 GB 上限。
 

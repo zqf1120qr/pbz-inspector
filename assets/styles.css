@@ -170,6 +170,28 @@ body::before {
 }
 .ghost-btn:hover { color: var(--text); border-bottom-color: var(--line-strong); }
 
+/* 顶栏的 GitHub / 求 Star 按钮：金色描边，和绿色隐私胶囊、文字按钮区分开 */
+.github-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 9px;
+  border: 1px solid rgba(211, 176, 120, 0.24);
+  border-radius: 2px;
+  background: rgba(211, 176, 120, 0.05);
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.github-btn:hover {
+  border-color: rgba(211, 176, 120, 0.5);
+  background: rgba(211, 176, 120, 0.1);
+  color: #e6c893;
+}
+.github-btn svg { display: block; flex: none; }
+
 /* ---------------- 布局 ---------------- */
 main {
   position: relative;
@@ -1434,6 +1456,35 @@ main {
 }
 .site-foot .dim { color: #8f8981; font-size: 12px; }
 
+/* 底部求 Star 的胶囊链接 */
+.foot-star { margin: 0 0 14px !important; }
+
+.star-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px 7px 13px;
+  border: 1px solid rgba(211, 176, 120, 0.26);
+  background: rgba(211, 176, 120, 0.05);
+  color: var(--gold);
+  font-size: 13.5px;
+  letter-spacing: 0.03em;
+  border-radius: 2px;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.star-link:hover {
+  border-color: rgba(211, 176, 120, 0.5);
+  background: rgba(211, 176, 120, 0.1);
+  color: #e6c893;
+}
+.star-link svg { display: block; flex: none; }
+.star-link em {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-style: normal;
+  color: #8d867d;
+}
+
 /* ---------------- 响应式 ---------------- */
 @media (max-width: 880px) {
   .topbar { padding: 18px 18px 0; }
@@ -1472,6 +1523,10 @@ main {
   .result-bar { gap: 10px; }
   .result-actions { width: 100%; }
   .result-actions .btn { flex: 1; }
+  .github-btn { font-size: 12.5px; padding: 5px 9px; gap: 6px; }
+  /* 页脚求 Star：窄屏去掉仓库名，否则会折成两行还把 pbz-inspector 断开 */
+  .star-link { font-size: 13px; padding: 7px 12px; white-space: nowrap; }
+  .star-link em { display: none; }
   .share-bar { flex-direction: column; align-items: stretch; }
   .share-bar .btn { width: 100%; }
   .meta-list { grid-template-columns: 108px 1fr; }
@@ -2320,6 +2375,9 @@ body.bd-lock { overflow: hidden; }
 @media (max-width: 365px) {
   .result-actions { flex-wrap: wrap; }
   .result-actions .btn { flex: 1 1 calc(50% - 5px); }
+  /* 顶栏塞不下「点个 Star」四个字，只留图标（金色描边本身也是提示） */
+  .github-btn { padding: 6px; }
+  .github-btn span { display: none; }
   /* 两列时「容器维护液体 + 上」放不下，退回单列保证名称完整 */
   .gear-grid { grid-template-columns: 1fr; }
 }
