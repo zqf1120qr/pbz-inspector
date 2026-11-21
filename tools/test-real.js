@@ -9,8 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 
-globalThis.window = globalThis;   // boss-atlas 以 window 为宿主
+globalThis.window = globalThis;   // boss-atlas / item-atlas 以 window 为宿主
 require('../js/boss-atlas.js');
+require('../js/item-atlas.js');
 
 const Save = require('../js/pbzs.js');
 const View = require('../js/pbz-view.js');
@@ -59,7 +60,14 @@ const file = process.argv[2] || path.join(process.env.USERPROFILE, 'Desktop', 'P
   console.log('存档时间  ', v.savedAt);
   console.log('Boss      ', v.bossDefeated + ' / ' + v.bossTotal + ' 已击破');
   console.log('物品      ', v.items.count, '种，合计', v.items.total, '| 分类', JSON.stringify(v.items.buckets));
-  console.log('武器      ', v.weapons.count, '把，最高 +' + v.weapons.maxPlus, '| 副武器', v.edges.count);
+  console.log('武器      ', v.weapons.count + '/' + v.weapons.total, '把，最高 +' + v.weapons.maxPlus);
+  console.log('影之武装  ', v.edges.count + '/' + v.edges.total, '件，最高 +' + v.edges.maxPlus, '|', v.edges.items.map(w => w.name + (w.plus ? '+' + w.plus : '')).join(', '));
+  console.log('饰品      ', v.accessories.count + '/' + v.accessories.total, '件，装配', v.accessories.equipped, '|', v.accessories.items.map(a => a.name).join(', '));
+  console.log('药瓶      ', v.medicines.count + '/' + v.medicines.total, '种 |', v.medicines.items.map(m => m.name + (m.slot ? '[' + m.slot + ']' : '')).join(', '));
+  const unk = [];
+  [].concat(v.weapons.items, v.edges.items, v.accessories.items, v.medicines.items)
+    .forEach(x => { if (!x.matched) unk.push(x.raw); });
+  console.log('图鉴未收录', unk.length ? unk.join(', ') : '（无）');
   console.log('图鉴      ', JSON.stringify(v.collectibles));
   console.log('成就      ', v.achievements);
   console.log('评语      ', v.verdict.rank, '|', v.verdict.lines.join(' '));

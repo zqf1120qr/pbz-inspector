@@ -200,26 +200,40 @@
         </div>
       </article>
 
-      <!-- 物品 -->
-      <div class="split split-2">
-        <article class="card">
-          <header class="card-head">
-            <h3>武器库</h3>
-            <span class="card-note" id="weaponNote">—</span>
+      <!-- 装备与收藏 -->
+      <article class="card">
+        <header class="card-head">
+          <h3>武器库</h3>
+          <span class="card-note" id="weaponNote">—</span>
+        </header>
+        <div class="gear-grid" id="weaponList"></div>
+        <div class="empty-hint" id="weaponEmpty" hidden><p>未识别到武器字段。</p></div>
+        <div class="gear-sub" id="shaqiBlock" hidden>
+          <header class="gear-subhead">
+            <h4>影之武装</h4>
+            <span class="card-note" id="shaqiNote">—</span>
           </header>
-          <div class="chip-grid" id="weaponList"></div>
-          <div class="empty-hint" id="weaponEmpty" hidden><p>未识别到武器字段。</p></div>
-        </article>
+          <div class="gear-grid" id="shaqiList"></div>
+        </div>
+      </article>
 
-        <article class="card">
-          <header class="card-head">
-            <h3>行囊</h3>
-            <span class="card-note" id="itemNote">—</span>
-          </header>
-          <div class="chip-grid" id="itemList"></div>
-          <div class="empty-hint" id="itemEmpty" hidden><p>未识别到道具字段。</p></div>
-        </article>
-      </div>
+      <article class="card">
+        <header class="card-head">
+          <h3>饰品库</h3>
+          <span class="card-note" id="accessoryNote">—</span>
+        </header>
+        <div class="gear-grid" id="accessoryList"></div>
+        <div class="empty-hint" id="accessoryEmpty" hidden><p>未识别到饰品字段。</p></div>
+      </article>
+
+      <article class="card">
+        <header class="card-head">
+          <h3>药瓶库</h3>
+          <span class="card-note" id="medicineNote">—</span>
+        </header>
+        <div class="gear-grid" id="medicineList"></div>
+        <div class="empty-hint" id="medicineEmpty" hidden><p>未识别到药瓶字段。</p></div>
+      </article>
 
       <!-- 存档槽 -->
       <article class="card card-slots">
@@ -316,6 +330,7 @@
 <script src="js/boss-atlas.js"></script>
 <script src="js/boss-lore.js"></script>
 <script src="js/pbzs.js"></script>
+<script src="js/item-atlas.js"></script>
 <script src="js/item-names.js"></script>
 <script src="js/pbz-view.js"></script>
 <script src="js/share-card.js"></script>

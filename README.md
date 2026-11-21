@@ -23,7 +23,7 @@
 - **时长与进度** — 总游玩时长、当前天数 / 66 天、首领击破率环形图
 - **首领战死图鉴** — 每名交战过的首领一张卡片，带立绘、中文名、击败难度与死亡次数；顶部按所属区域分类筛选
 - **首领详情** — 点击卡片展开抽屉：图鉴简介、死亡 / 挑战 / 击杀 / 最快用时 / 击杀率，以及按「周目_难度」分组的战斗记录
-- **收集与装备** — 敌人图鉴、成就、物品种类、主武器与沙器武器（含强化等级）
+- **收集与装备** — 敌人图鉴、成就；武器库（主武器 + 影之武装，含强化等级）、饰品库、药瓶库，图标 + 官方中文名逐条与游民星空图鉴对齐，并给出「已获得 / 图鉴总数」
 - **存档槽切换** — 一份文件里打包的自动档、手动档与账户数据可逐个查看
 - **战绩长图** — Canvas 绘制 1600px 宽的分享图，含四格战绩与首领立绘网格，一键下载
 - **原始数据浏览** — 解密后的完整 JSON 属性树，支持搜索
@@ -83,8 +83,27 @@ uint16 nameLen | name | uint8 algorithm | uint8 flag
 | 周目 | 分部键的第一段（存档从 0 起算，界面显示为「第 N 周目」） |
 | 击破率 | 已击破首领数 / 图鉴内的首领总数 |
 | 货币 | `Player.Dust` |
-| 武器 | `Inventory.MainWeaponInfos` / `ShaqiWeapons`，等级存的是 UI 上的 `+n` 值加 1 |
-| 收集 | `__Advanced__.Codex.DiscoveredEnemies`、`__Achievements__.UnlockedIds`、`Inventory.InventoryInfos` |
+| 武器 | `Inventory.MainWeaponInfos`，`WeaponLevel` 比 UI 上的 `+n` 多 1 |
+| 影之武装 | `Inventory.ShaChiWeaponInfo`（已获得全部），`ShaqiWeapons` 只是当前装配的两个 |
+| 饰品 | `Inventory.AccessoryInfos`（已获得全部）；`AccessoryIDs` 是身上 3 个槽，空位为 `"None"` |
+| 药瓶 | `Inventory.MedicineInfos`；`TopMedicine` / `BottomMedicine` 是上/下两个快捷位 |
+| 收集 | `__Advanced__.Codex.DiscoveredEnemies`、`__Achievements__.UnlockedIds`，装备类按图鉴总数算进度 |
+
+## 装备与图鉴对齐
+
+武器 / 影之武装 / 饰品 / 药瓶的中文名不靠人肉翻译，而是直接取**游民星空《影之刃零》图鉴**：图鉴每个条目都带 `values.gameInternalId`，正好等于存档里的键名，所以「存档 ID → 官方中文名」是精确对照。
+
+`js/item-atlas.js` 由 `node tools/fetch-item-atlas.js` 生成（当前 132 条：武器 25、影之武装 24、饰品 66、药瓶 17），文件头带生成日期，重新抓取即可跟上游戏版本。图鉴前端是 Nuxt SSR + 懒加载，HTML 首屏只有 20 条，全量要走 `renderer.gamersky.com/gameWiki/web/wikis/16/categories/<id>/entries?pageSize=100`。
+
+早期的社区对照表把 `Tang` 译成「唐刀」、`IronBlade` 译成「玄铁刃」、`Long` 译成「长刀」，与官方图鉴（黑伤 / 残钢刃 / 长形黑伤）不符，现已改为图鉴名。`js/item-names.js` 只保留图鉴没覆盖的材料、服饰与旧 ID 别名。存档里偶有大小写与图鉴不一致的键（`Kuye` vs `KuYe`），查表时做了小写兜底。
+
+### 图标
+
+装备区用「图标 + 名称」瓦片展示，图标是图鉴条目的 `coverUrl`（256×256 透明底 PNG），由 `node tools/fetch-item-icons.js` 统一缩到 96px 存进 `assets/items/`，按图鉴内部 ID 命名，页面里显示 44px（2 倍屏够用）。
+
+缩放走无头浏览器的 canvas：Node 下载字节 → base64 → `createImageBitmap` → canvas → PNG。不在页面里直接 fetch 是因为 `img1.gamersky.com` 没有 CORS 头，跨域图片会把 canvas 标脏，读不出像素。
+
+瓦片宽度是 `minmax(184px, 1fr)`——再窄的话「容器维护液体 + 上」「亡命斩马刀 +13」这类最长的组合会被省略号截断（实测过 172px 必然截断）。窄屏 ≤560px 改两列并缩到 32px 图标，≤365px 退回单列，因为 320px 宽下 6 个汉字的名称加角标放不进半屏。
 
 ## 首领数据与简介
 
@@ -94,6 +113,12 @@ uint16 nameLen | name | uint8 algorithm | uint8 flag
 
 界面上首领按**所属区域**分类（序章 / 悲泣溪谷 / 庞镇……），区域顺序取自图鉴条目顺序，近似游戏推进顺序，只显示当前存档里遇到过的区域。个别图鉴条目的内部名与存档不一致（如 `BP_Monster_HookMan` 对应图鉴的 `_P2`），会用立绘文件名里的图鉴编号兜底。
 
+### 多段遭遇
+
+少数首领会在同一周目里按章节反复登场（如「金面具黑衣人」每章一次），但游戏只维护**一条** `BossRecord`：键名固定取第一段蓝图的 `_01`，`ClassPath` 被最后一次遭遇覆盖，挑战 / 击杀 / 最快天生就是累计值，存档里没有任何分段计数。
+
+能区分「每次遭遇」的痕迹只有任务系统：`Narrative.QuestGameTimes` 里的 `Tutorial_Longzhu1` / `Tutorial_Longzhu3` 记录了各段完成时的游戏内秒，`NarrativeSavedQuests` 里对应条目带墙钟时间（`QuestBranches[].DirtyTime`）。`js/pbz-view.js` 的 `ENCOUNTER_RULES` 用「存档键 → 任务名正则」显式声明映射，卡片左下角标出「N 段合并」，详情抽屉里列出各段的任务与完成时间，并注明统计为合计值。
+
 ## 战绩卡
 
 `js/share-card.js` 用 Canvas 2D 绘制，与页面响应式是**两套体系**：页面按视口自适应，导出图固定 1600px 宽，高度只随首领数量变化（9 名 → 1959px，15 名 → 2390px），与视口、像素比无关。
@@ -101,6 +126,8 @@ uint16 nameLen | name | uint8 algorithm | uint8 flag
 - 版面：页眉（英文小标 + 衬线标题 + 难度/天数/时长 + 右上角头号苦主立绘）→ 四格数值（累计死亡 / 战斗记录 / 已击败 / 推算失败）→ 首领立绘网格 → 页脚说明
 - 导出文件名取自存档时间（`PBZGameSystem.DateTimeString`），如 `2026.11.15-02.02.53` 的存档导出为 `261115_战绩.png`；账户槽没有存档时间时退回 `战绩.png`
 - 每张卡片上的难度、周目、死亡数都是深色胶囊标签，难度按档位配色（入阵者冷灰 / 破局者旧金 / 逆天者朱砂）
+- 多段遭遇的首领（见上文）在格子左下角多一枚金色「N 段合并」小标签，与页面卡片一致，提醒该格的挑战次数与最佳用时是几段遭遇的累计值
+- 页脚右侧有一行收藏汇总：`图鉴  武器 12/25 · 影之武装 9/24 · 饰品 25/66 · 药瓶 7/17`。**只上数字不上图标** —— 24 个首领的卡已经 3200px 高、3.6 MB，再塞 132 个图标会到 5000px 以上，微信压完基本看不清，而且装备是存档状态、不是战绩
 - `draw()` 是异步的（需预载立绘），调用方必须 `await`
 - 噪点用 `mulberry32` 按存档数据播种，同一份存档导出的 PNG **逐字节一致**；实测 390@3x / 360@2x / 768@2x / 1600@1x 四种设备配置 MD5 相同
 
@@ -136,7 +163,7 @@ git push -u origin main
 
 推送后在仓库 Settings → Pages 里把 Source 设为 `Deploy from a branch` → `main` / `(root)`。`.nojekyll` 已在仓库内，避免 Jekyll 处理静态资源。
 
-体积参考：全站约 6 MB（立绘 2.6 MB、示例图 2.9 MB、代码 0.4 MB），远低于 Pages 的 1 GB 上限。
+体积参考：全站约 7 MB（立绘 2.6 MB、示例图 2.9 MB、装备图标 0.97 MB、代码 0.5 MB），远低于 Pages 的 1 GB 上限。
 
 ## 项目结构
 
@@ -144,9 +171,11 @@ git push -u origin main
 index.html                 页面骨架
 assets/styles.css          全部样式（含响应式）
 assets/bosses/             76 张首领立绘（256×256 PNG，共约 2.6 MB）
+assets/items/              132 张装备图标（96×96 PNG，共约 0.97 MB，按图鉴内部 ID 命名）
 js/pbzs.js                 PBZS v3 容器解密 + 解压（zlib / Oodle）
 js/pbz-view.js             解密后 JSON → 页面视图模型
-js/item-names.js           物品 ID → 中文名对照表
+js/item-atlas.js           图鉴对照表（武器 / 影之武装 / 饰品 / 药瓶，自动生成）
+js/item-names.js           图鉴未覆盖的 ID 中文名补丁表（材料 / 服饰 / 旧别名）
 js/boss-atlas.js           首领图鉴数据（内部 ID / 中文名 / 区域 / 立绘）
 js/boss-lore.js            首领简介与图鉴编号（按内部 ID 索引）
 js/share-card.js           战绩长图绘制（Canvas，异步）
@@ -158,7 +187,10 @@ tools/make-demo.js         生成示例存档
 tools/audit-save.js        存档结构审计（时间字段穷举 / BossRecord 原始结构）
 tools/fetch-boss-atlas.py  重新抓取首领图鉴数据与立绘
 tools/fetch-boss-lore.js   重新抓取首领简介，生成 js/boss-lore.js
+tools/fetch-item-atlas.js  重新抓取武器 / 饰品 / 药瓶图鉴，生成 js/item-atlas.js
+tools/fetch-item-icons.js  抓取图鉴图标并缩到 96px，输出到 assets/items/
 tools/fetch-item-names.py  重新抓取物品 ID 对照表
+tools/serve.js             本地静态服务器（页面依赖 crypto.subtle，必须走 localhost）
 tools/test-real.js         命令行解析真实存档并打印关键指标
 tools/test-ui.js           Playwright 界面自检（需另装 playwright-core）
 .nojekyll                  跳过 GitHub Pages 的 Jekyll 处理
@@ -167,6 +199,8 @@ tools/test-ui.js           Playwright 界面自检（需另装 playwright-core�
 ### 自检
 
 ```bash
+npm i                                                     # 只为界面自检装 playwright-core
+node tools/serve.js 8765                                  # 另开一个终端起本地服务
 node tools/test-real.js /path/to/PBZSaveGame.sav          # 命令行跑通解密 + 指标
 node tools/audit-save.js /path/to/PBZSaveGame.sav --dump # 打印结构并导出完整 JSON
 BASE=http://127.0.0.1:8765/index.html node tools/test-ui.js --real
@@ -179,12 +213,16 @@ BASE=http://127.0.0.1:8765/index.html node tools/test-ui.js --real
 ## 已知限制
 
 - **存档不含单场或累计战斗时长** — `BossRecord` 每个分部只有 `AttemptCount`、`KillCount`、`BestTimeMs` 三个字段，没有任何逐场耗时或累计耗时记录。界面只能显示「最快用时」，首领的总耗时无法从存档得出
+- **多段遭遇的统计拆不开** — 「金面具黑衣人」这类跨章节反复登场的首领共用一条记录，挑战 / 击杀 / 最速只能显示合计值；页面只能靠任务名与完成时间标出各段先后，无法把数字分到每一段。真要分次数据，得在每次遭遇后各存一个档，再按 `AttemptCount` 增量做 diff
 - **密钥会随版本失效** — 内置密钥对应 Steam build 26266538（2026-10-29 发行版）。大版本更新后若提示「认证失败」，把社区给出的新密钥填进「解析信息 → 自定义密钥」即可，配置存在 localStorage
 - 需要 HTTPS 或 localhost：WebCrypto 在 `file://` 下不可用
 - Oodle 解码器是 115 KB 的 WASM 模块，首次解析需要加载，弱网下会有短暂等待
 - 战绩卡的字体按系统解析（`Songti SC` / `SimSun` 等），跨操作系统字形可能有细微差异；尺寸与排版不受影响
 - 图鉴收录 76 个首领条目（同一首领的不同阶段分开计），后续版本新增首领需要重新跑一次抓取脚本
 - 图鉴有一处编号空缺（`80300`，「金面具黑衣人」），该首领没有简介，详情里会显示「图鉴没有收录这名首领的介绍」
+- 装备图鉴同理：游戏更新后新增武器 / 饰品 / 药瓶，要重跑 `tools/fetch-item-atlas.js` 和 `tools/fetch-item-icons.js`，否则新条目没有中文名、也没有图标（图标缺失时瓦片左侧留空，不会出现破图）
+- 饰品的 `AccessoryInfos.CurrentLevel` 语义未核实（不是武器那种 `+n`），只在悬浮提示里显示原始等级，不做角标
+- 药瓶的 `CurrentTime` / `MaxTime` 与界面上显示的可用瓶数不完全等同，因此不当主数值展示
 - 本地缓存存的是**加密后的原始文件**，解密 JSON 不落盘；清除缓存或使用无痕模式即不保留
 
 ## License

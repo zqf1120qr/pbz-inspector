@@ -1049,32 +1049,99 @@ main {
   transition: width 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* ---------------- 芯片列表 ---------------- */
-.chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+/* ---------------- 装备瓦片（武器库 / 饰品库 / 药瓶库） ---------------- */
+.gear-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  gap: 8px;
 }
 
-.chip {
-  display: inline-flex;
+.gear-tile {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
+  gap: 9px;
+  padding: 6px 10px 6px 6px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.022);
-  font-size: 13px;
-  color: var(--text-dim);
-  letter-spacing: 0.02em;
-  transition: border-color 0.2s, color 0.2s;
+  background: linear-gradient(180deg, #17171c 0%, #101014 100%);
+  transition: border-color 0.2s, background 0.2s;
 }
-.chip:hover { border-color: rgba(255, 255, 255, 0.2); color: var(--text); }
-.chip .n {
+.gear-tile:hover { border-color: rgba(255, 255, 255, 0.16); }
+
+/* 装配中：旧金描边，底色微微提亮 */
+.gear-tile.is-equipped {
+  border-color: rgba(211, 176, 120, 0.4);
+  background: linear-gradient(180deg, rgba(211, 176, 120, 0.075) 0%, rgba(211, 176, 120, 0.015) 100%);
+}
+
+.gear-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.05), transparent 68%);
+}
+.gear-icon img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.75));
+}
+
+.gear-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gear-tile.is-equipped .gear-name { color: var(--text); }
+
+.gear-plus {
+  flex: none;
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--gold);
   background: var(--gold-dim);
   padding: 0 4px;
+}
+
+/* 药瓶的上/下快捷位 */
+.gear-slot {
+  flex: none;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 4px;
+  color: var(--crimson-bright);
+  background: var(--crimson-dim);
+  border: 1px solid rgba(205, 52, 48, 0.28);
+}
+
+/* 武器库里的影之武装分区 */
+.gear-sub {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.gear-subhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.gear-subhead h4 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
 }
 
 .empty-hint {
@@ -1394,6 +1461,12 @@ main {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .stat { padding: 13px 14px; }
   .stat-value { font-size: 24px; }
+  /* 装备瓦片：窄屏单列会拉出十几行，改两列并缩小图标 */
+  .gear-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .gear-tile { gap: 6px; padding: 5px 8px 5px 5px; }
+  .gear-icon, .gear-icon img { width: 32px; height: 32px; }
+  .gear-name { font-size: 12.5px; }
+  .gear-plus, .gear-slot { font-size: 10.5px; padding: 0 3px; }
   .dz-frame { padding: 40px 20px 34px; }
   .tabbar { gap: 18px; }
   .result-bar { gap: 10px; }
@@ -1863,6 +1936,21 @@ main {
   pointer-events: none;
 }
 
+/* 左下角：多段遭遇标记（同一蓝图在一周目内反复登场，战绩为累计值） */
+.boss-card-multi {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+  z-index: 2;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  background: rgba(8, 8, 10, 0.72);
+  border: 1px solid rgba(211, 176, 120, 0.42);
+  pointer-events: none;
+}
+
 .boss-card-open {
   position: absolute;
   right: 8px;
@@ -2232,4 +2320,6 @@ body.bd-lock { overflow: hidden; }
 @media (max-width: 365px) {
   .result-actions { flex-wrap: wrap; }
   .result-actions .btn { flex: 1 1 calc(50% - 5px); }
+  /* 两列时「容器维护液体 + 上」放不下，退回单列保证名称完整 */
+  .gear-grid { grid-template-columns: 1fr; }
 }

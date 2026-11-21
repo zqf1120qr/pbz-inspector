@@ -397,6 +397,18 @@
         });
       }
 
+      // 左下：多段遭遇标记（与页面 .boss-card-multi 对应，提示战绩为累计值）
+      if (b.merged) {
+        chip(ctx, x + 12, y + ART_H - 44, b.encounterCount + ' 段合并', {
+          font: '500 17px ' + SANS,
+          h: 32,
+          padX: 11,
+          bg: 'rgba(10,10,13,0.84)',
+          color: C.gold,
+          border: 'rgba(211,176,120,0.42)'
+        });
+      }
+
       // 右下：死亡数（骷髅 + 朱砂数字）
       if (b.deaths != null && b.deaths > 0) {
         chip(ctx, x + CARD_W - 12, y + ART_H - 56, String(b.deaths), {
@@ -440,6 +452,28 @@
       ctx.fillStyle = C.faint;
       ctx.font = '400 19px ' + SANS;
       ctx.fillText('另有 ' + (bosses.length - MAX_CARDS) + ' 名首领未展示', PAD, FOOT_Y - 30);
+    }
+
+    /* ---------- 收藏汇总（一行，不放图标：图太长会糊） ---------- */
+    var gear = [];
+    if (view.weapons && view.weapons.count) {
+      gear.push('武器 ' + view.weapons.count + (view.weapons.total ? '/' + view.weapons.total : ''));
+    }
+    if (view.edges && view.edges.count) {
+      gear.push('影之武装 ' + view.edges.count + (view.edges.total ? '/' + view.edges.total : ''));
+    }
+    if (view.accessories && view.accessories.count) {
+      gear.push('饰品 ' + view.accessories.count + (view.accessories.total ? '/' + view.accessories.total : ''));
+    }
+    if (view.medicines && view.medicines.count) {
+      gear.push('药瓶 ' + view.medicines.count + (view.medicines.total ? '/' + view.medicines.total : ''));
+    }
+    if (gear.length) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = C.faint;
+      ctx.font = '400 19px ' + SANS;
+      ctx.fillText('图鉴  ' + gear.join(' · '), W - PAD, FOOT_Y - 30);
+      ctx.textAlign = 'left';
     }
 
     /* ---------- 页脚 ---------- */

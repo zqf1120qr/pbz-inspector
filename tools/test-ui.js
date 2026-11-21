@@ -67,11 +67,16 @@ function readOverview(page) {
       bossCards: document.querySelectorAll('#bossList .boss-card').length,
       slotCards: document.querySelectorAll('#slotGrid .slot-card').length,
       statTiles: document.querySelectorAll('#statGrid .stat').length,
-      weaponChips: document.querySelectorAll('#weaponList .chip').length,
-      itemChips: document.querySelectorAll('#itemList .chip').length,
+      weaponTiles: document.querySelectorAll('#weaponList .gear-tile').length,
+      shaqiTiles: document.querySelectorAll('#shaqiList .gear-tile').length,
+      accessoryTiles: document.querySelectorAll('#accessoryList .gear-tile').length,
+      medicineTiles: document.querySelectorAll('#medicineList .gear-tile').length,
       collectRows: document.querySelectorAll('#collectList .collect-item').length,
       bossNote: t('#bossNote'),
-      slotNote: t('#slotNote')
+      slotNote: t('#slotNote'),
+      weaponNote: t('#weaponNote'),
+      accessoryNote: t('#accessoryNote'),
+      medicineNote: t('#medicineNote')
     };
   });
 }

@@ -401,8 +401,9 @@
     renderStats(state.view);
     renderBosses(state.view);
     renderCollectibles(state.view);
-    renderChips('#weaponList', '#weaponEmpty', '#weaponNote', weaponsAsChips(state.view), '把');
-    renderChips('#itemList', '#itemEmpty', '#itemNote', state.view.items, '种');
+    renderWeaponCard(state.view);
+    renderGear('#accessoryList', '#accessoryEmpty', '#accessoryNote', state.view.accessories, '件');
+    renderGear('#medicineList', '#medicineEmpty', '#medicineNote', state.view.medicines, '种');
 
     var notice = $('#parseNotice');
     if (state.view.bosses.length === 0) {
@@ -564,10 +565,13 @@
         sub: view.weapons ? '最高强化 +' + view.weapons.maxPlus : '存档未记录'
       },
       {
-        label: '行囊',
-        value: view.items ? view.items.count : null,
-        unit: '种',
-        sub: view.items && view.items.total ? '合计 ' + view.items.total + ' 件' : '物品条目数'
+        label: '饰品',
+        value: view.accessories ? view.accessories.count : null,
+        unit: '件',
+        sub: view.accessories && view.accessories.total
+          ? '图鉴共 ' + view.accessories.total + ' 件' +
+            (view.accessories.equipped ? ' · 装配 ' + view.accessories.equipped : '')
+          : '存档未记录'
       }
     ];
 
@@ -687,10 +691,16 @@
 
       var lost = b.defeated === false ? '<span class="boss-card-lost">未击破</span>' : '';
 
+      // 多段遭遇（同一蓝图在一周目内反复登场）：存档只有累计值，卡片上先给出段数
+      var multi = b.merged
+        ? '<span class="boss-card-multi">' + b.encounterCount + ' 段合并</span>'
+        : '';
+
       var title = b.display;
       if (b.rawName && b.rawName !== b.display) title += ' · ' + b.rawName;
       if (b.bestTime) title += ' · 最快 ' + b.bestTime;
       if (b.attempts != null) title += ' · 挑战 ' + b.attempts + ' 次';
+      if (b.merged) title += ' · 含 ' + b.encounterCount + ' 段遭遇（统计为累计值）';
       title += ' · 点击查看详情';
 
       var zero = b.deaths === 0 ? ' is-zero' : '';
@@ -699,7 +709,7 @@
 
       return '<article class="boss-card' + (isTop ? ' is-top' : '') +
         '" data-key="' + escapeHtml(b.key) + '" role="button" tabindex="0" title="' + escapeHtml(title) + '">' +
-        '<div class="boss-card-art">' + art + diff + regionTag + lost +
+        '<div class="boss-card-art">' + art + diff + regionTag + lost + multi +
           '<span class="boss-card-open">详情</span>' +
         '</div>' +
         '<div class="boss-card-info">' +
@@ -737,6 +747,32 @@
         '<b>' + escapeHtml(s.v) + '</b><i>' + s.l + '</i></div>';
     });
     html += '</div>';
+
+    if (b.encounters && b.encounters.length) {
+      html += '<section class="bd-sec"><h4>遭遇记录</h4>';
+      html += '<table class="bd-table"><thead><tr>' +
+        '<th>段</th><th>任务</th><th>游戏进度</th><th>存档时间</th>' +
+        '</tr></thead><tbody>';
+      b.encounters.forEach(function (e, i) {
+        html += '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td>' + escapeHtml(e.label || e.quest) + '</td>' +
+          '<td>' + escapeHtml(e.timecode || '—') + '</td>' +
+          '<td>' + escapeHtml(e.clock || '—') + '</td>' +
+          '</tr>';
+      });
+      html += '</tbody></table>';
+
+      if (b.merged) {
+        html += '<p class="bd-note">这名首领在同一个存档里登场了 <b>' + b.encounterCount +
+          ' 段</b>，但游戏只记一条战绩（键名固定为 <b>' + escapeHtml(b.rawName) +
+          '</b>，蓝图路径被最后一次覆盖）。上面的挑战、击杀、最快都是<b>合计值</b>，' +
+          '存档没有分段计数，无法拆到每一段。表里的时间是各段任务完成时的游戏内累计进度。</p>';
+      } else {
+        html += '<p class="bd-note">依据任务系统里与该首领同名的教程任务推算，这是它唯一一次登场。</p>';
+      }
+      html += '</section>';
+    }
 
     html += '<section class="bd-sec"><h4>人物</h4>';
     if (b.summary && b.summary.length) {
@@ -867,17 +903,84 @@
     }).join('');
   }
 
-  /** 武器列表转成 chip 结构 */
-  function weaponsAsChips(view) {
-    if (!view.weapons || !view.weapons.count) return null;
-    return {
-      items: view.weapons.items.map(function (w) {
-        return { name: w.name + (w.plus ? ' +' + w.plus : ''), raw: w.raw, count: null };
-      })
-    };
+  /* ------------------------------------------------------------------ *
+   * 装备 / 收藏（武器库、饰品库、药瓶库）
+   * ------------------------------------------------------------------ */
+
+  /**
+   * 一件装备的瓦片。图标 44px（资源是 96px，够 2 倍屏），右侧单行名称。
+   * - plus：强化等级（界面上的 +n）
+   * - slot：药瓶的上/下快捷位
+   * - equipped：装配中，描边转旧金
+   * 悬浮提示给内部 ID、图鉴分类和效果说明，方便核对解析是否对得上。
+   */
+  function gearTile(item) {
+    var badges = '';
+    if (item.plus) badges += '<span class="gear-plus">+' + item.plus + '</span>';
+    if (item.slot) badges += '<span class="gear-slot">' + escapeHtml(item.slot) + '</span>';
+
+    var tip = item.raw;
+    if (item.kind) tip += ' · ' + item.kind;
+    if (item.equipped) tip += ' · 装配中';
+    if (item.level) tip += ' · 存档等级 ' + item.level;
+    if (item.summary) tip += '\n' + item.summary;
+
+    var icon = item.icon
+      ? '<span class="gear-icon"><img src="' + escapeHtml(item.icon) + '" alt="" loading="lazy" ' +
+        'onerror="this.style.visibility=\'hidden\'"></span>'
+      : '<span class="gear-icon"></span>';
+
+    return '<div class="gear-tile' + (item.equipped ? ' is-equipped' : '') +
+      '" title="' + escapeHtml(tip) + '">' +
+      icon +
+      '<span class="gear-name">' + escapeHtml(item.name) + '</span>' +
+      badges +
+      '</div>';
   }
 
-  function renderChips(listSel, emptySel, noteSel, data, unit) {
+  function gearNote(data, unit) {
+    if (!data || !data.count) return '未记录';
+    var text = data.count + (data.total ? ' / ' + data.total : '') + ' ' + unit;
+    if (data.equipped) text += ' · 装配 ' + data.equipped;
+    return text;
+  }
+
+  /** 武器库：主武器 + 影之武装（图鉴里是两个分区，界面上也分开列） */
+  function renderWeaponCard(view) {
+    var weapons = view.weapons;
+    var list = $('#weaponList');
+    var empty = $('#weaponEmpty');
+    var note = $('#weaponNote');
+    var sub = $('#shaqiBlock');
+
+    var items = weapons && weapons.items ? weapons.items : [];
+    if (!items.length) {
+      list.innerHTML = '';
+      list.hidden = true;
+      empty.hidden = false;
+      note.textContent = '未记录';
+    } else {
+      list.hidden = false;
+      empty.hidden = true;
+      note.textContent = weapons.count + (weapons.total ? ' / ' + weapons.total : '') + ' 把' +
+        (weapons.maxPlus ? ' · 最高 +' + weapons.maxPlus : '');
+      list.innerHTML = items.map(gearTile).join('');
+    }
+
+    var edges = (weapons && weapons.edges && weapons.edges.items) ? weapons.edges.items : [];
+    if (!edges.length) {
+      sub.hidden = true;
+      return;
+    }
+    sub.hidden = false;
+    $('#shaqiNote').textContent = edges.length +
+      (weapons.edges.total ? ' / ' + weapons.edges.total : '') + ' 件' +
+      (weapons.edges.maxPlus ? ' · 最高 +' + weapons.edges.maxPlus : '') +
+      (weapons.edges.equipped ? ' · 装配 ' + weapons.edges.equipped : '');
+    $('#shaqiList').innerHTML = edges.map(gearTile).join('');
+  }
+
+  function renderGear(listSel, emptySel, noteSel, data, unit) {
     var el = $(listSel);
     var empty = $(emptySel);
     var note = $(noteSel);
@@ -892,15 +995,8 @@
 
     el.hidden = false;
     empty.hidden = true;
-    note.textContent = data.items.length + ' ' + unit;
-
-    var cap = unit === '种' ? 30 : 48;
-    el.innerHTML = data.items.slice(0, cap).map(function (item) {
-      var count = item.count != null && item.count > 1 ? '<span class="n">×' + item.count + '</span>' : '';
-      return '<span class="chip" title="' + escapeHtml(item.raw || item.name) + '">' + escapeHtml(item.name) + count + '</span>';
-    }).join('') + (data.items.length > cap
-      ? '<span class="chip">… 另有 ' + (data.items.length - cap) + ' 项</span>'
-      : '');
+    note.textContent = gearNote(data, unit);
+    el.innerHTML = data.items.map(gearTile).join('');
   }
 
   /* ------------------------------------------------------------------ *
