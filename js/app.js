@@ -681,9 +681,18 @@
           escapeHtml(b.difficulty) + '</span>'
         : '';
 
-      var regionTag = all && b.region
-        ? '<span class="boss-card-region">' + escapeHtml(b.region) + '</span>'
-        : '';
+      /* 章节标签：多段遭遇的首领（同一蓝图跨章节反复登场）写死单一章节会误导，
+         图鉴给出的是「首见」章节，存档里也没有任务→章节的映射，所以只标「多处登场」 */
+      var regionTag = '';
+      if (all) {
+        if (b.merged) {
+          regionTag = '<span class="boss-card-region" title="图鉴标注首见于' +
+            escapeHtml(b.region || '未知章节') + '，存档里共 ' + b.encounterCount +
+            ' 段登场、分布在多章">多处登场</span>';
+        } else if (b.region) {
+          regionTag = '<span class="boss-card-region">' + escapeHtml(b.region) + '</span>';
+        }
+      }
 
       var metaBits = [];
       if (b.attempts != null) metaBits.push('挑战 ' + b.attempts);
@@ -768,6 +777,9 @@
           ' 段</b>，但游戏只记一条战绩（键名固定为 <b>' + escapeHtml(b.rawName) +
           '</b>，蓝图路径被最后一次覆盖）。上面的挑战、击杀、最快都是<b>合计值</b>，' +
           '存档没有分段计数，无法拆到每一段。表里的时间是各段任务完成时的游戏内累计进度。</p>';
+        html += '<p class="bd-note">图鉴只标注了首见章节（<b>' + escapeHtml(b.region || '未知') +
+          '</b>），但它在多章都有登场。存档里没有任务与章节的对应关系，' +
+          '无法推出每一段属于哪一章，所以卡片上不写单一章节，只标「多处登场」。</p>';
       } else {
         html += '<p class="bd-note">依据任务系统里与该首领同名的教程任务推算，这是它唯一一次登场。</p>';
       }

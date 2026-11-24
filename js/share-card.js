@@ -423,8 +423,10 @@
       }
 
       // 右上：所属章节（与页面 .boss-card-region 对应，中性色，不与左上的难度抢眼）
-      if (b.region) {
-        chip(ctx, x + CARD_W - 12, y + 12, b.region, {
+      // 多段遭遇的首领跨章节登场，图鉴给的是首见章节，写死会误导 → 只标「多处登场」
+      var regionText = b.merged ? '多处登场' : b.region;
+      if (regionText) {
+        chip(ctx, x + CARD_W - 12, y + 12, regionText, {
           font: '500 19px ' + SANS,
           h: 37,
           bg: 'rgba(10,10,13,0.7)',
