@@ -4,7 +4,7 @@
  * 版面参考 samples/影之刃零_战绩.png：
  *   页眉（英文小标 + 衬线标题 + 副题 + 存档时间 + 右上立绘）
  *   → 四格数值（累计死亡 / 战斗记录 / 已击败 / 推算失败）
- *   → Boss 网格（立绘底板 + 左上难度 + 右上周目 + 右下死亡数 + 名字/最佳用时）
+ *   → Boss 网格（立绘底板 + 左上难度 + 右上章节 + 右下死亡数 + 名字/最佳用时）
  *   → 页脚说明
  *
  * draw() 是异步的：需要先预载立绘再绘制。
@@ -14,7 +14,6 @@
 
   var W = 1600;
   var PAD = 64;
-  var MAX_CARDS = 24;
 
   var C = {
     bg: '#0a0a0c',
@@ -189,7 +188,7 @@
   async function draw(view, opts) {
     opts = opts || {};
     var bosses = (view.bosses || []).slice();
-    var shown = bosses.slice(0, MAX_CARDS);
+    var shown = bosses;
 
     var COLS = 4;
     var GAP = 20;
@@ -372,6 +371,12 @@
     ctx.fillText((view.bossDefeated || 0) + ' / ' + (view.bossTotal || 0) + ' 已击破', W - PAD, SEC_Y);
     ctx.textAlign = 'left';
 
+    /* 只有存在多周目记录时，周目才有信息量；否则不占版面（存档里周目从 0 起算，展示 +1） */
+    var multiCycle = false;
+    for (var c = 0; c < bosses.length; c++) {
+      if ((bosses[c].cycleLabels || []).length > 1) { multiCycle = true; break; }
+    }
+
     /* ---------- Boss 网格 ---------- */
     for (var k = 0; k < shown.length; k++) {
       var b = shown[k];
@@ -417,14 +422,14 @@
         });
       }
 
-      // 右上：周目（次要信息，弱化胶囊）
-      if (b.cycleLabels && b.cycleLabels.length) {
-        chip(ctx, x + CARD_W - 12, y + 12, b.cycleLabels[0] + ' 周目', {
+      // 右上：所属章节（与页面 .boss-card-region 对应，中性色，不与左上的难度抢眼）
+      if (b.region) {
+        chip(ctx, x + CARD_W - 12, y + 12, b.region, {
           font: '500 19px ' + SANS,
           h: 37,
-          bg: 'rgba(10,10,13,0.62)',
-          color: 'rgba(244,241,236,0.88)',
-          border: 'rgba(255,255,255,0.17)',
+          bg: 'rgba(10,10,13,0.7)',
+          color: 'rgba(228,223,214,0.92)',
+          border: 'rgba(255,255,255,0.2)',
           align: 'right'
         });
       }
@@ -459,10 +464,29 @@
       }
 
       // 信息条
+      var cycText = '';
+      if (multiCycle && b.cycleLabels && b.cycleLabels.length) {
+        var cl = b.cycleLabels;
+        cycText = (cl.length > 1 ? cl[0] + '–' + cl[cl.length - 1] : cl[0]) + ' 周目';
+      }
+      var cycW = 0;
+      if (cycText) {
+        ctx.font = '400 18px ' + SANS;
+        cycW = ctx.measureText(cycText).width + 16;
+      }
+
       ctx.fillStyle = C.text;
       ctx.font = '500 25px ' + SANS;
-      var nm = clip(ctx, b.display || b.name || b.rawName, CARD_W - 28);
+      var nm = clip(ctx, b.display || b.name || b.rawName, CARD_W - 28 - cycW);
       ctx.fillText(nm, x + 14, y + ART_H + 38);
+
+      if (cycText) {
+        ctx.textAlign = 'right';
+        ctx.fillStyle = C.faint;
+        ctx.font = '400 18px ' + SANS;
+        ctx.fillText(cycText, x + CARD_W - 14, y + ART_H + 36);
+        ctx.textAlign = 'left';
+      }
 
       ctx.fillStyle = b.defeated === false ? C.faint : C.dim;
       ctx.font = '400 19px ' + SANS;
@@ -478,12 +502,6 @@
         ctx.fillText('挑战 ' + b.attempts + ' 次', x + CARD_W - 14, y + ART_H + 74);
         ctx.textAlign = 'left';
       }
-    }
-
-    if (bosses.length > MAX_CARDS) {
-      ctx.fillStyle = C.faint;
-      ctx.font = '400 19px ' + SANS;
-      ctx.fillText('另有 ' + (bosses.length - MAX_CARDS) + ' 名首领未展示', PAD, FOOT_Y - 30);
     }
 
     /* ---------- 收藏汇总（一行，不放图标：图太长会糊） ---------- */
